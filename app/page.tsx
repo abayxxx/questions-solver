@@ -6,95 +6,39 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, RotateCcw, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import Webcam from "react-webcam";
 
 interface AnalysisResult {
   isQuestion: boolean;
   confidence: number;
   explanation: string;
   detectedText?: string;
-  answer: string;
+  answer?: string;
 }
 
 export default function PhotoQuestionChecker() {
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const webcamRef = useRef<Webcam>(null);
 
-  const startCamera = useCallback(async () => {
-    try {
-      setError(null);
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera not supported on this device");
-      }
-
-      const constraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 30 },
-        },
-      };
-
-      console.log("Requesting camera access...");
-      const mediaStream = await navigator.mediaDevices.getUserMedia(
-        constraints
-      );
-      console.log("Camera access granted");
-
-      setStream(mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.setAttribute("playsinline", "true");
-        videoRef.current.setAttribute("webkit-playsinline", "true");
-
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.play().catch((err) => {
-              console.error("Error playing video:", err);
-              setError("Failed to start video. Try refreshing the page.");
-            });
-          }
-        }, 100);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error("Camera access error:", err);
-
-      if (err.name === "NotAllowedError") {
-        setError(
-          "Camera access denied. On Mac: Go to System Preferences > Security & Privacy > Camera, and allow your browser to access the camera."
-        );
-      } else if (err.name === "NotFoundError") {
-        setError(
-          "No camera found. Make sure your Mac camera is not being used by another app."
-        );
-      } else if (err.name === "NotReadableError") {
-        setError(
-          "Camera is busy. Close other apps using the camera (like FaceTime, Zoom, etc.) and try again."
-        );
-      } else {
-        setError(
-          `Camera error: ${err.message}. Try the file upload option below.`
-        );
-      }
-    }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
-  }, [stream]);
+  const videoConstraints = {
+    width: 1280,
+    height: 720,
+    facingMode: "environment", // Default to back camera
+  };
 
   const analyzeImage = useCallback(async (imageDataUrl: string) => {
     try {
@@ -107,7 +51,8 @@ export default function PhotoQuestionChecker() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
@@ -119,29 +64,22 @@ export default function PhotoQuestionChecker() {
   }, []);
 
   const capturePhoto = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (!imageSrc) {
+      setError("Failed to capture photo. Please try again.");
+      return;
+    }
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
+    setCapturedImage(imageSrc);
+    setShowCamera(false);
 
-    if (!context) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
-
-    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
-    setCapturedImage(imageDataUrl);
-    stopCamera();
-
-    // Analyze the image via API
+    // Analyze the image
     setIsAnalyzing(true);
     setResult(null);
     setError(null);
 
     try {
-      const analysisResult = await analyzeImage(imageDataUrl);
+      const analysisResult = await analyzeImage(imageSrc);
       setResult(analysisResult);
     } catch (err) {
       setError("Failed to analyze image. Please try again.");
@@ -149,14 +87,16 @@ export default function PhotoQuestionChecker() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [stopCamera, analyzeImage]);
+  }, [analyzeImage]);
 
-  const resetCapture = useCallback(() => {
-    setCapturedImage(null);
-    setResult(null);
+  const startCamera = useCallback(() => {
     setError(null);
-    startCamera();
-  }, [startCamera]);
+    setShowCamera(true);
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    setShowCamera(false);
+  }, []);
 
   const handleFileUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,12 +108,18 @@ export default function PhotoQuestionChecker() {
         return;
       }
 
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image too large. Please select an image under 10MB.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         const imageDataUrl = e.target?.result as string;
         setCapturedImage(imageDataUrl);
 
-        // Analyze the image via API
+        // Analyze the image
         setIsAnalyzing(true);
         setResult(null);
         setError(null);
@@ -193,6 +139,21 @@ export default function PhotoQuestionChecker() {
     [analyzeImage]
   );
 
+  const resetCapture = useCallback(() => {
+    setCapturedImage(null);
+    setResult(null);
+    setError(null);
+    setShowCamera(false);
+  }, []);
+
+  const handleUserMediaError = useCallback((error: string | DOMException) => {
+    console.error("Webcam error:", error);
+    setError(
+      "Camera access failed. Please check permissions and try again, or use the upload option."
+    );
+    setShowCamera(false);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-md mx-auto space-y-6">
@@ -209,7 +170,7 @@ export default function PhotoQuestionChecker() {
           <CardContent className="space-y-4">
             {/* Camera/Image Display */}
             <div className="relative aspect-[4/3] bg-black rounded-lg overflow-hidden">
-              {!capturedImage && !stream && (
+              {!capturedImage && !showCamera && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                   <Button onClick={startCamera} size="lg">
                     <Camera className="h-5 w-5 mr-2" />
@@ -228,6 +189,7 @@ export default function PhotoQuestionChecker() {
                     />
                     <Button asChild variant="outline">
                       <label htmlFor="file-upload" className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
                         Upload Photo
                       </label>
                     </Button>
@@ -235,13 +197,13 @@ export default function PhotoQuestionChecker() {
                 </div>
               )}
 
-              {stream && !capturedImage && (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  webkit-playsinline="true"
+              {showCamera && !capturedImage && (
+                <Webcam
+                  ref={webcamRef}
+                  audio={false}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={videoConstraints}
+                  onUserMediaError={handleUserMediaError}
                   className="w-full h-full object-cover"
                 />
               )}
@@ -258,7 +220,7 @@ export default function PhotoQuestionChecker() {
 
             {/* Controls */}
             <div className="flex gap-2 justify-center">
-              {stream && !capturedImage && (
+              {showCamera && !capturedImage && (
                 <>
                   <Button onClick={capturePhoto} size="lg">
                     <Camera className="h-5 w-5 mr-2" />
@@ -295,7 +257,7 @@ export default function PhotoQuestionChecker() {
               <Card className="border-red-200 bg-red-50">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 text-red-700">
-                    <XCircle className="h-5 w-5" />
+                    <AlertCircle className="h-5 w-5" />
                     <span className="text-sm">{error}</span>
                   </div>
                 </CardContent>
@@ -335,6 +297,7 @@ export default function PhotoQuestionChecker() {
                   <p className="text-sm text-muted-foreground">
                     {result.explanation}
                   </p>
+
                   {result.answer && (
                     <div className="mt-3 p-3 bg-white rounded border">
                       <p className="text-xs font-medium text-muted-foreground mb-1">
@@ -357,9 +320,6 @@ export default function PhotoQuestionChecker() {
             )}
           </CardContent>
         </Card>
-
-        {/* Hidden canvas for image processing */}
-        <canvas ref={canvasRef} className="hidden" />
       </div>
     </div>
   );
