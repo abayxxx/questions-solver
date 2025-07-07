@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📸 Question Solver App
 
-## Getting Started
+> **Built with Next.js, Shadcn UI, and Google Gemini AI**
 
-First, run the development server:
+The **Question Solver App** lets users capture a photo or upload an image, then intelligently detects whether the image contains a **question**, **instruction**, or **task** using the power of **Google Gemini AI**.
+Clean UI powered by **Shadcn**, fast API routes with **Next.js**, and multi-modal AI vision processing.
+
+---
+
+## 🚀 Features
+
+- ✅ Capture a photo from your camera or upload an image file.
+- ✅ Auto-detect questions in images:
+
+  - Standard questions (`?`, question words).
+  - Fill-in-the-blank instructions.
+  - Multiple choice exercises.
+  - Math problems and tasks.
+
+- ✅ Beautiful, responsive UI using **Shadcn UI** and **Tailwind CSS**.
+- ✅ Multimodal AI analysis with **Google Gemini 1.5 Flash Vision API**.
+- ✅ JSON-formatted results with confidence scores and explanations.
+
+---
+
+## 🔍 Example Use Case
+
+| Example Image                                                                                                            | AI Output                            |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| **Question:** _"Complete the sentence below with the correct preposition."_ <br> Options: A. for, B. about, C. of, D. on | `isQuestion: true, confidence: 0.95` |
+| Simple photo of nature                                                                                                   | `isQuestion: false, confidence: 1.0` |
+
+---
+
+## 🛠️ Tech Stack
+
+| Tech                 | Description                                |
+| -------------------- | ------------------------------------------ |
+| **Next.js 14**       | App Router, API routes, TypeScript support |
+| **Google Gemini AI** | Multi-modal vision + text analysis         |
+| **Shadcn UI**        | Beautiful and accessible UI components     |
+| **Tailwind CSS**     | Utility-first CSS framework                |
+| **Lucide-react**     | Icon library                               |
+
+---
+
+## 🔑 Environment Variables
+
+| Key              | Example Value | Description                       |
+| ---------------- | ------------- | --------------------------------- |
+| `GEMINI_API_KEY` | `AIza...`     | Your Google Generative AI API key |
+
+---
+
+## 📸 How It Works
+
+1. User clicks "Start Camera" or "Upload Photo".
+2. The app captures an image and converts it to **base64**.
+3. Sends the image and a detailed analysis prompt to **Gemini 1.5 Flash Vision API**.
+4. Parses the JSON response to display:
+
+   - ✅ Whether it’s a question
+   - 🔍 Explanation of why
+   - 📊 Confidence score
+   - 📝 Extracted text from the image
+
+---
+
+## ▶️ Getting Started
+
+### 1. Clone the Repo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/abayxxx/question-solver.git
+cd question-solver
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+(or use `yarn` or `npm`)
 
-## Learn More
+### 3. Add Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env.local` file:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+GEMINI_API_KEY=your_google_genai_api_key
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Run Dev Server
 
-## Deploy on Vercel
+```bash
+npm dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ✨ Screenshots
+
+| Camera Mode                                             | Result View                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| ![camera](https://fakeimg.pl/300x200/?text=Camera+View) | ![result](https://fakeimg.pl/300x200/?text=Question+Detected) |
+
+---
+
+## 🌟 Future Improvements
+
+- [ ] Add support for multiple languages (English, Spanish, etc.)
+- [ ] Export analysis results as PDF
+- [ ] Allow multi-image upload
+- [ ] Add offline OCR fallback
+
+---
+
+## ❤️ Acknowledgements
+
+- [Google Gemini API](https://ai.google.dev/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Next.js](https://nextjs.org/)
+- [Lucide React](https://lucide.dev/)
+
+---
+
+## 📄 License
+
+MIT © 2025 [abayxxx](https://github.com/abayxxx)
+
+---
