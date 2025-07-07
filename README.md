@@ -41,6 +41,7 @@ Clean UI powered by **Shadcn**, fast API routes with **Next.js**, and multi-moda
 | **Shadcn UI**        | Beautiful and accessible UI components     |
 | **Tailwind CSS**     | Utility-first CSS framework                |
 | **Lucide-react**     | Icon library                               |
+| **React webcam**     | Webcam library                             |
 
 ---
 
@@ -124,6 +125,7 @@ Open [http://localhost:3000](http://localhost:3000)
 - [Shadcn UI](https://ui.shadcn.com/)
 - [Next.js](https://nextjs.org/)
 - [Lucide React](https://lucide.dev/)
+- [React Webcam](https://www.npmjs.com/package/react-webcam)
 
 ---
 
