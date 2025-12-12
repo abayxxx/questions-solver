@@ -53,7 +53,7 @@ Respond in JSON format:
 
     // Send the image and prompt
     const result = await genAI.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       contents: [
         { text: promptText },
         { inlineData: { mimeType: mimeType, data: base64Image } },
