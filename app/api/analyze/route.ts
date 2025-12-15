@@ -30,26 +30,45 @@ export async function POST(request: NextRequest) {
     // Create a multi-modal model (vision + text)
 
     const promptText = `
-      Analyze the following image and determine if it contains a question or a task asking for a response. Look for:
+Analyze the following image carefully.
 
-- Direct questions (sentences ending with question marks "?").
-- Indirect questions or instructions that ask the user to complete something (for example, "Fill in the blank", "Choose the correct answer", "Complete the sentence", "Solve this", etc.).
-- Multiple choice questions, fill-in-the-blank exercises, or instructions asking the reader to respond.
-- Question words: what, where, when, why, how, who, which, etc.
-- Mathematical problems asking for solutions.
-- Any context where a response, choice, or action is required from the user.
+Your tasks are:
 
-Even if the sentence is an instruction, if it **asks the reader to provide an answer**, mark it as a question.
+1. Determine whether the image contains a question or a task that requires a response.
+   Look for:
+   - Direct questions (sentences ending with "?").
+   - Indirect questions or instructions that ask the reader to respond 
+     (e.g., "Fill in the blank", "Choose the correct answer", 
+     "Complete the sentence", "Solve this", etc.).
+   - Multiple choice questions, fill-in-the-blank exercises, or instructions.
+   - Question words such as: what, where, when, why, how, who, which.
+   - Mathematical problems or logical tasks requiring a solution.
 
-Respond in JSON format:
+2. If a question or task **is detected**, analyze its content and **provide the correct and most appropriate answer** based on the information visible in the image.
+
+3. If **no question or task is detected**, do NOT attempt to answer anything.
+   In this case, set "answer" to an empty string.
+
+Respond strictly in the following JSON format:
+
 {
   "isQuestion": boolean,
   "confidence": number (from 0 to 1),
   "explanation": string,
-  "detectedText": string (optional)
+  "detectedText": string (optional),
   "answer": string
 }
-    `;
+
+Rules:
+- "isQuestion" should be true only if the image clearly asks for a response.
+- "answer" must be concise, accurate, and directly address the question.
+- If the question is multiple choice, include the selected option and its explanation.
+- If the question is mathematical, include the final result (and brief reasoning if needed).
+- If no question exists, return:
+  "isQuestion": false
+  "answer": ""
+`;
+
 
     // Send the image and prompt
     const result = await genAI.models.generateContent({
