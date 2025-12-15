@@ -64,6 +64,7 @@ Rules:
 - "answer" must be concise, accurate, and directly address the question.
 - If the question is multiple choice, include the selected option and its explanation.
 - If the question is mathematical, include the final result (and brief reasoning if needed).
+- The answer should be answered with bahasa indonesia.
 - If no question exists, return:
   "isQuestion": false
   "answer": ""
